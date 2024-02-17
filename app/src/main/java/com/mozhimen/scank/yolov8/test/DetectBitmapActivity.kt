@@ -37,7 +37,7 @@ class DetectBitmapActivity : BaseActivityVB<ActivityDetectBitmapBinding>() {
     override fun initView(savedInstanceState: Bundle?) {
         val ret_init: Boolean = yolov8api.init(assets, 0, 0)
         if (!ret_init) {
-            Log.e("MainActivity", "yolov8ncnn Init failed")
+            Log.e(TAG, "yolov8ncnn Init failed")
         }
         vb.buttonImage.setOnClickListener {
             val i = Intent(Intent.ACTION_PICK)
@@ -64,6 +64,25 @@ class DetectBitmapActivity : BaseActivityVB<ActivityDetectBitmapBinding>() {
         })
     }
 
+    private val _paintRect by lazy {
+        Paint().apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 4f
+        }
+    }
+    private val _paintTextRect by lazy {
+        Paint() .apply {
+            color = Color.WHITE
+            style = Paint.Style.FILL
+        }
+    }
+    private val _paintText by lazy {
+        Paint().apply {
+            color = Color.BLACK
+            textSize = 26f
+            textAlign = Paint.Align.LEFT
+        }
+    }
     private fun showObjects(objects: Array<Yolov8Api.Obj>?) {
         if (objects == null) {
             vb.imageView.setImageBitmap(bitmap)
@@ -94,25 +113,15 @@ class DetectBitmapActivity : BaseActivityVB<ActivityDetectBitmapBinding>() {
             Color.rgb(139, 125, 96)
         )
         val canvas = Canvas(rgba)
-        val paint = Paint()
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = 4f
-        val textbgpaint = Paint()
-        textbgpaint.color = Color.WHITE
-        textbgpaint.style = Paint.Style.FILL
-        val textpaint = Paint()
-        textpaint.color = Color.BLACK
-        textpaint.textSize = 26f
-        textpaint.textAlign = Paint.Align.LEFT
         for (i in objects.indices) {
-            paint.color = colors[i % 19]
-            canvas.drawRect(objects[i].x, objects[i].y, objects[i].x + objects[i].w, objects[i].y + objects[i].h, paint)
+            _paintRect.color = colors[i % 19]
+            canvas.drawRect(objects[i].x, objects[i].y, objects[i].x + objects[i].w, objects[i].y + objects[i].h, _paintRect)
 
             // draw filled text inside image
             run {
                 val text: String = objects[i].label.toString() + " = " + java.lang.String.format("%.1f", objects[i].prob * 100) + "%"
-                val text_width = textpaint.measureText(text)
-                val text_height = -textpaint.ascent() + textpaint.descent()
+                val text_width = _paintText.measureText(text)
+                val text_height = -_paintText.ascent() + _paintText.descent()
                 var x: Float = objects[i].x
                 var y: Float = objects[i].y - text_height
                 if (y < 0) {
@@ -121,8 +130,8 @@ class DetectBitmapActivity : BaseActivityVB<ActivityDetectBitmapBinding>() {
                 if (x + text_width > rgba.width) {
                     x = rgba.width - text_width
                 }
-                canvas.drawRect(x, y, x + text_width, y + text_height, textbgpaint)
-                canvas.drawText(text, x, y - textpaint.ascent(), textpaint)
+                canvas.drawRect(x, y, x + text_width, y + text_height, _paintTextRect)
+                canvas.drawText(text, x, y - _paintText.ascent(), _paintText)
             }
         }
         vb.imageView.setImageBitmap(rgba)
@@ -140,7 +149,7 @@ class DetectBitmapActivity : BaseActivityVB<ActivityDetectBitmapBinding>() {
                     vb.imageView.setImageBitmap(bitmap)
                 }
             } catch (e: FileNotFoundException) {
-                Log.e("MainActivity", "FileNotFoundException")
+                Log.e(TAG, "FileNotFoundException")
                 return
             }
         }
@@ -149,16 +158,16 @@ class DetectBitmapActivity : BaseActivityVB<ActivityDetectBitmapBinding>() {
     @Throws(FileNotFoundException::class)
     private fun decodeUri(selectedImage: Uri?): Bitmap? {
         // Decode image size
-        val o = BitmapFactory.Options()
-        o.inJustDecodeBounds = true
-        BitmapFactory.decodeStream(contentResolver.openInputStream(selectedImage!!), null, o)
+        val options = BitmapFactory.Options()
+        options.inJustDecodeBounds = true
+        BitmapFactory.decodeStream(contentResolver.openInputStream(selectedImage!!), null, options)
 
         // The new size we want to scale to
         val REQUIRED_SIZE = 640
 
         // Find the correct scale value. It should be the power of 2.
-        var width_tmp = o.outWidth
-        var height_tmp = o.outHeight
+        var width_tmp = options.outWidth
+        var height_tmp = options.outHeight
         var scale = 1
         while (true) {
             if (width_tmp / 2 < REQUIRED_SIZE
@@ -187,7 +196,7 @@ class DetectBitmapActivity : BaseActivityVB<ActivityDetectBitmapBinding>() {
                 ExifInterface.ORIENTATION_ROTATE_90 -> rotate = 90
             }
         } catch (e: IOException) {
-            Log.e("MainActivity", "ExifInterface IOException")
+            Log.e(TAG, "ExifInterface IOException")
         }
         val matrix = Matrix()
         matrix.postRotate(rotate.toFloat())
