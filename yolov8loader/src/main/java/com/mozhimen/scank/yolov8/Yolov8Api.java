@@ -3,7 +3,8 @@ package com.mozhimen.scank.yolov8;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 
-import com.mozhimen.basick.lintk.optins.OApiInit_ByLazy;
+import com.mozhimen.kotlin.lintk.optins.OApiInit_ByLazy;
+
 
 /**
  * @ClassName Yolov8Api
